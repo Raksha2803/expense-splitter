@@ -3,22 +3,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import models, schemas
-from app import balances
+from app import models, schemas, auth, balances
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
 
 @router.post("/", response_model=schemas.GroupResponse)
 def create_group(group: schemas.GroupCreate, db: Session = Depends(get_db)):
-    # Check the creator actually exists before making a group for them
     creator = db.query(models.User).filter(models.User.id == group.created_by).first()
     if not creator:
         raise HTTPException(status_code=404, detail="Creator user not found")
 
     new_group = models.Group(name=group.name, created_by=group.created_by)
-
-    # Automatically add the creator as the first member of their own group
     new_group.members.append(creator)
 
     db.add(new_group)
@@ -47,8 +43,8 @@ def add_member(group_id: str, request: schemas.AddMemberRequest, db: Session = D
 
 
 @router.get("/", response_model=List[schemas.GroupResponse])
-def get_groups(db: Session = Depends(get_db)):
-    return db.query(models.Group).all()
+def get_groups(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    return current_user.groups
 
 
 @router.get("/{group_id}", response_model=schemas.GroupResponse)
@@ -57,6 +53,7 @@ def get_group(group_id: str, db: Session = Depends(get_db)):
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
     return group
+
 
 @router.get("/{group_id}/balances")
 def get_balances(group_id: str, db: Session = Depends(get_db)):

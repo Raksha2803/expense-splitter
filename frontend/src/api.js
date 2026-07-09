@@ -6,8 +6,6 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// This runs before every request - it automatically attaches
-// the saved token (if we have one) to the Authorization header
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) {
@@ -33,6 +31,16 @@ export async function signup(name, email, password) {
   return response.data;
 }
 
+export async function getCurrentUser() {
+  const response = await api.get("/users/me");
+  return response.data;
+}
+
+export async function getUserByEmail(email) {
+  const response = await api.get(`/users/by-email/${email}`);
+  return response.data;
+}
+
 export async function getGroups() {
   const response = await api.get("/groups/");
   return response.data;
@@ -40,6 +48,16 @@ export async function getGroups() {
 
 export async function getGroup(groupId) {
   const response = await api.get(`/groups/${groupId}`);
+  return response.data;
+}
+
+export async function createGroup(name, createdBy) {
+  const response = await api.post("/groups/", { name, created_by: createdBy });
+  return response.data;
+}
+
+export async function addMember(groupId, userId) {
+  const response = await api.post(`/groups/${groupId}/members`, { user_id: userId });
   return response.data;
 }
 
@@ -60,21 +78,6 @@ export async function createExpense(groupId, amount, description, splits) {
     description,
     splits,
   });
-  return response.data;
-}
-
-export async function getCurrentUser() {
-  const response = await api.get("/users/me");
-  return response.data;
-}
-
-export async function createGroup(name, createdBy) {
-  const response = await api.post("/groups/", { name, created_by: createdBy });
-  return response.data;
-}
-
-export async function addMember(groupId, userId) {
-  const response = await api.post(`/groups/${groupId}/members`, { user_id: userId });
   return response.data;
 }
 

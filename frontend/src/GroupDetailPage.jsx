@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getGroup, getExpenses, getSettlements, createExpense, addMember, getGroups } from "./api";
+import { getGroup, getExpenses, getSettlements, createExpense, addMember, getUserByEmail } from "./api";
 
 function GroupDetailPage({ groupId, onBack }) {
   const [group, setGroup] = useState(null);
@@ -69,20 +69,8 @@ function GroupDetailPage({ groupId, onBack }) {
     e.preventDefault();
     setError("");
     try {
-      const allGroups = await getGroups();
-      let foundUserId = null;
-      for (const g of allGroups) {
-        const match = g.members.find((m) => m.email === newMemberEmail);
-        if (match) {
-          foundUserId = match.id;
-          break;
-        }
-      }
-      if (!foundUserId) {
-        setError("No user found with that email (they may need to sign up first).");
-        return;
-      }
-      await addMember(groupId, foundUserId);
+      const user = await getUserByEmail(newMemberEmail);
+      await addMember(groupId, user.id);
       setNewMemberEmail("");
       await loadAll();
     } catch (err) {
